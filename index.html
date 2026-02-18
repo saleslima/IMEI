@@ -14,7 +14,8 @@ body{
     display:flex;
     justify-content:center;
     align-items:center;
-    height:100vh;
+    min-height:100vh;
+    padding:20px;
 }
 .container{
     background:#fff;
@@ -53,6 +54,9 @@ button{
 button:hover{
     opacity:0.9;
 }
+small{
+    color:#777;
+}
 </style>
 </head>
 <body>
@@ -60,9 +64,15 @@ button:hover{
 <div class="container">
     <h2>Cadastro</h2>
 
-    <input type="text" id="imei" placeholder="IMEI" readonly>
-    <button class="btn-imei" onclick="getIMEI()">Obter IMEI</button>
+    <!-- IMEI 1 -->
+    <input type="text" id="imei1" placeholder="IMEI 1" maxlength="15">
+    <button class="btn-imei" onclick="getIMEI()">Obter IMEI 1</button>
 
+    <!-- IMEI 2 -->
+    <input type="text" id="imei2" placeholder="IMEI 2 (Opcional)" maxlength="15">
+    <small>Preencha caso o aparelho seja Dual SIM</small>
+
+    <!-- CEP -->
     <input type="text" id="cep" placeholder="CEP" maxlength="8" onblur="buscarCEP()">
     <input type="text" id="rua" placeholder="Rua" readonly>
     <input type="text" id="numero" placeholder="Número">
@@ -70,18 +80,20 @@ button:hover{
     <input type="text" id="cidade" placeholder="Município" readonly>
     <input type="text" id="estado" placeholder="Estado" readonly>
 
+    <!-- EMAIL -->
     <input type="email" id="email" placeholder="Seu Email">
 
     <button class="btn-enviar" onclick="enviarDados()">Enviar</button>
 </div>
 
 <script>
+
 // INICIALIZA EMAILJS
 (function(){
     emailjs.init("YOUR_PUBLIC_KEY");
 })();
 
-// FUNÇÃO PARA OBTER IMEI (WebOTP - Android)
+// FUNÇÃO PARA OBTER IMEI 1 (WebOTP - Android HTTPS)
 async function getIMEI(){
     try{
         if ('OTPCredential' in window) {
@@ -89,7 +101,7 @@ async function getIMEI(){
                 otp: { transport:['sms'] },
                 signal: new AbortController().signal
             });
-            document.getElementById("imei").value = content.code;
+            document.getElementById("imei1").value = content.code;
         } else {
             alert("IMEI não pode ser capturado automaticamente neste dispositivo.");
         }
@@ -98,9 +110,9 @@ async function getIMEI(){
     }
 }
 
-// BUSCAR CEP VIA API
+// BUSCAR CEP
 function buscarCEP(){
-    let cep = document.getElementById("cep").value;
+    let cep = document.getElementById("cep").value.replace(/\D/g, '');
 
     if(cep.length !== 8){
         alert("CEP inválido");
@@ -119,14 +131,16 @@ function buscarCEP(){
         document.getElementById("bairro").value = dados.bairro;
         document.getElementById("cidade").value = dados.localidade;
         document.getElementById("estado").value = dados.uf;
-    });
+    })
+    .catch(() => alert("Erro ao consultar CEP."));
 }
 
-// ENVIAR DADOS POR EMAIL
+// ENVIAR DADOS
 function enviarDados(){
 
     let params = {
-        imei: document.getElementById("imei").value,
+        imei1: document.getElementById("imei1").value,
+        imei2: document.getElementById("imei2").value,
         cep: document.getElementById("cep").value,
         rua: document.getElementById("rua").value,
         numero: document.getElementById("numero").value,
@@ -136,7 +150,7 @@ function enviarDados(){
         email: document.getElementById("email").value
     };
 
-    if(!params.imei || !params.cep || !params.numero || !params.email){
+    if(!params.imei1 || !params.cep || !params.numero || !params.email){
         alert("Preencha todos os campos obrigatórios!");
         return;
     }
@@ -144,10 +158,12 @@ function enviarDados(){
     emailjs.send("YOUR_SERVICE_ID","YOUR_TEMPLATE_ID",params)
     .then(function(response){
         alert("Dados enviados com sucesso!");
+        document.querySelector("form")?.reset();
     }, function(error){
         alert("Erro ao enviar.");
     });
 }
+
 </script>
 
 </body>
